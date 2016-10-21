@@ -245,7 +245,7 @@ void sort() {
       for ( j = 1 ; j < k ; j++ ) {   
 				 int switch_flag = 0;
 				 
-         if (current->scheduled > next->scheduled) {
+         if (current->scheduled < next->scheduled) {
             switch_flag = 1;
          } else if (current->scheduled == next->scheduled) {
            if (current->priority > next->priority) {
@@ -291,7 +291,6 @@ void sort() {
          next = next->next;
       }
    }
-   //printList(); 
 }
 
 

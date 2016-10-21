@@ -65,11 +65,11 @@ void *thread_start(void *thread_ptr) {
   int position = thread_obj->position;
 
   usleep(100000 * arrival_time);
+  //TODO: use relative machine time
   // clock_gettime(CLOCK_REALTIME, &tm); investigate this 
+  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%2d)\n", id, (double)arrival_time, (double)transmission_time, priority);
   
   thread_transmission(id, transmission_time);
-  
-	printf("inside thread %d \n", thread_obj->position);
 }
 
 void thread_transmission(int id, int transmission_time) {
@@ -90,6 +90,7 @@ void thread_transmission(int id, int transmission_time) {
 	
 	// wait for cond var and for having the first spot
 	while (getFirstId() != id){
+		printf("Flow %2d waits for the finish of flow %2d \n", id, getFirstId());
 		pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
 	}
 	
@@ -99,8 +100,12 @@ void thread_transmission(int id, int transmission_time) {
 	
 	pthread_mutex_unlock(&ll_mutex);
 	
+	//TODO: use relative time
+	printf("Flow %2d starts its transmission at time %.2f. \n", id, (double) 0);
 	// perform transmission (sleep)
 	usleep(100000 * transmission_time);
+	//TODO: use relative time
+	printf("Flow %2d finishes its transmission at time %d\n", id, 0);
 	
 	// mutex 
 	// remove node from linked list
