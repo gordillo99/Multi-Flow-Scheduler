@@ -28,6 +28,18 @@ void *emalloc(int n) { // custom malloc function with error checking
  	return p;
 }
 
+//display the list
+void printList() {
+   struct thread *ptr = head;
+   //start from the beginning
+   while(ptr != NULL) {
+      printf("(id: %d, arrival_time: %d, transmission_time: %d, priority: %d, original position: %d, scheduled: %d)\n",
+      	ptr->id, ptr->arrival_time, ptr->transmission_time, ptr->priority, ptr->position, ptr->scheduled);
+      ptr = ptr->next;
+   }
+   printf("\n");
+}
+
 int getFirstId() {
 	if (head == NULL) return -1;
 	else return head->id;
@@ -236,13 +248,13 @@ void sort() {
          if (current->scheduled > next->scheduled) {
             switch_flag = 1;
          } else if (current->scheduled == next->scheduled) {
-           if (current->priority < next->priority) {
+           if (current->priority > next->priority) {
              switch_flag = 1;
            } else if (current->priority == next->priority) {
-             if (current->transmission_time < next->transmission_time) {
+             if (current->transmission_time > next->transmission_time) {
                switch_flag = 1;
              } else if (current->transmission_time == next->transmission_time) {
-               if (current->position < next->position) {
+               if (current->position > next->position) {
                  switch_flag = 1;
                }
              }
@@ -278,7 +290,8 @@ void sort() {
          current = current->next;
          next = next->next;
       }
-   }   
+   }
+   //printList(); 
 }
 
 

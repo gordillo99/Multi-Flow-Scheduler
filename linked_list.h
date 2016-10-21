@@ -17,6 +17,8 @@ struct thread* delete(int id);
 struct thread* deletePosition(int position);
 void updateScheduled(int position, int scheduled);
 void sort();
+int getFirstId();
+void printList();
 
 
 

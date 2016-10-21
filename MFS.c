@@ -11,13 +11,26 @@
 
 void read_input_file();
 void *thread_start(void *thread_ptr);
+void thread_transmission(int id, int transmission_time);
 
 pthread_t * thread_ids;
 pthread_mutex_t ll_mutex; // read-write linked list mutex declaration
+pthread_mutex_t trans_mutex; // transmission mutex declaration
+pthread_cond_t turn_cond = PTHREAD_COND_INITIALIZER; //convar initialization
 
 int main (int argc, char **argv) {
 	int number_of_threads;
 	int i;
+	
+	if (pthread_mutex_init(&ll_mutex, NULL) != 0){ //mutex initialization
+        printf("Mutex init failed\n");
+        return 1;
+  }
+  
+  if (pthread_mutex_init(&trans_mutex, NULL) != 0){ //mutex initialization
+        printf("Mutex init failed\n");
+        return 1;
+  }
 	
 	read_input_file();
 	number_of_threads = length();
@@ -28,13 +41,17 @@ int main (int argc, char **argv) {
 	}
 	
 	
-	
 	for (i = 0; i < number_of_threads; i++) {
     pthread_join(id_array[i], NULL);
   }
 
   for (i = 0; i < length(); i++) free(deleteFirst()); // delete any remaining nodes before exiting
 
+
+	pthread_mutex_destroy(&ll_mutex);
+	pthread_mutex_destroy(&trans_mutex);
+	pthread_cond_destroy(&turn_cond);
+	
 	return (0);
 }
 
@@ -49,6 +66,8 @@ void *thread_start(void *thread_ptr) {
 
   usleep(100000 * arrival_time);
   // clock_gettime(CLOCK_REALTIME, &tm); investigate this 
+  
+  thread_transmission(id, transmission_time);
   
 	printf("inside thread %d \n", thread_obj->position);
 }
@@ -66,22 +85,34 @@ void thread_transmission(int id, int transmission_time) {
 	
 	pthread_mutex_unlock(&ll_mutex);
 	
+	// lock trans mutex
+	pthread_mutex_lock(&trans_mutex);
+	
 	// wait for cond var and for having the first spot
+	while (getFirstId() != id){
+		pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
+	}
+	
+	pthread_mutex_lock(&ll_mutex);
+	
+	updateScheduled(id, 2);
+	
+	pthread_mutex_unlock(&ll_mutex);
 	
 	// perform transmission (sleep)
-	
-	
+	usleep(100000 * transmission_time);
 	
 	// mutex 
 	// remove node from linked list
 	// mutex
-	/*
+	
 	pthread_mutex_lock(&ll_mutex);
 	
-	
+	deleteFirst();
 	
 	pthread_mutex_unlock(&ll_mutex);
-	*/
+	pthread_cond_signal(&turn_cond); // signal convar
+	pthread_mutex_unlock(&trans_mutex);
 }
 
 void read_input_file() {
