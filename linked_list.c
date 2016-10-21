@@ -2,17 +2,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-// in order to reduce the amount of potential bugs, linked list code taken from https://www.tutorialspoint.com/data_structures_algorithms/linked_list_program_in_c.htm
+// in order to reduce the amount of potential bugs, linked list code based from https://www.tutorialspoint.com/data_structures_algorithms/linked_list_program_in_c.htm
 
-struct thread  
+typedef struct thread  
 {
 	 int id;
 	 int arrival_time;
 	 int transmission_time;
 	 int priority;
-   int position; 
+   int position;
+   int scheduled;
    struct thread *next;
-};
+} thd;
 
 struct thread *head = NULL;
 struct thread *current = NULL;
@@ -27,8 +28,13 @@ void *emalloc(int n) { // custom malloc function with error checking
  	return p;
 }
 
+int getFirstId() {
+	if (head == NULL) return -1;
+	else return head->id;
+}
+
 //insert link at the first location
-void insertFirst(int key, int id, int arrival_time, int transmission_time, int priority, int position)
+void insertFirst(int id, int arrival_time, int transmission_time, int priority, int position, int scheduled)
 {
    //create a link
    struct thread *link = (struct thread*) emalloc(sizeof(struct thread));
@@ -80,7 +86,7 @@ int length()
 }
 
 //find a link with given key
-struct thread* find(int id){
+struct thread* find(int position){
 
    //start from the first link
    struct thread* current = head;
@@ -92,7 +98,7 @@ struct thread* find(int id){
    }
 
    //navigate through list
-   while(current->id != id){
+   while(current->position != position){
 	
       //if it is last thread
       if(current->next == NULL){
@@ -107,7 +113,7 @@ struct thread* find(int id){
    return current;
 }
 
-//delete a link with given key
+//delete a link with given id
 struct thread* delete(int id){
 
    //start from the first link
@@ -144,6 +150,135 @@ struct thread* delete(int id){
    }    
 	
    return current;
+}
+
+//delete a link with given id
+struct thread* deletePosition(int position){
+
+   //start from the first link
+   struct thread* current = head;
+   struct thread* previous = NULL;
+	
+   //if list is empty
+   if(head == NULL){
+      return NULL;
+   }
+
+   //navigate through list
+   while(current->position != position){
+	
+      //if it is last thread
+      if(current->next == NULL){
+         return NULL;
+      }else {
+         //store reference to current link
+         previous = current;
+         //move to next link
+         current = current->next;             
+      }
+		
+   }
+
+   //found a match, update the link
+   if(current == head) {
+      //change first to point to next link
+      head = head->next;
+   }else {
+      //bypass the current link
+      previous->next = current->next;
+   }    
+	
+   return current;
+}
+
+void updateScheduled(int id, int scheduled){
+
+   //start from the first link
+   struct thread* current = head;
+
+   //if list is empty
+   if(head == NULL)
+	 {
+      return;
+   }
+
+   //navigate through list
+   while(current->id != id){
+	
+      //if it is last thread
+      if(current->next == NULL){
+         return;
+      }else {
+         //go to next link
+         current = current->next;
+      }
+   }      
+	
+   current->scheduled = scheduled;
+}
+
+void sort() {
+
+   int i, j, k, temp_id, temp_arrival_time, temp_transmission_time, temp_priority, temp_position, temp_scheduled;
+   struct thread *current;
+   struct thread *next;
+	
+   int size = length();
+   k = size ;
+	
+   for ( i = 0 ; i < size - 1 ; i++, k-- ) {
+      current = head;
+      next = head->next;
+		
+      for ( j = 1 ; j < k ; j++ ) {   
+				 int switch_flag = 0;
+				 
+         if (current->scheduled > next->scheduled) {
+            switch_flag = 1;
+         } else if (current->scheduled == next->scheduled) {
+           if (current->priority < next->priority) {
+             switch_flag = 1;
+           } else if (current->priority == next->priority) {
+             if (current->transmission_time < next->transmission_time) {
+               switch_flag = 1;
+             } else if (current->transmission_time == next->transmission_time) {
+               if (current->position < next->position) {
+                 switch_flag = 1;
+               }
+             }
+           }
+         }
+         
+         if (switch_flag) {
+            temp_id = current->id;
+						current->id = next->id;
+						next->id = temp_id;
+
+						temp_arrival_time = current->arrival_time;
+						current->arrival_time = next->arrival_time;
+						next->arrival_time = temp_arrival_time;
+
+						temp_transmission_time = current->transmission_time;
+						current->transmission_time = next->transmission_time;
+						next->transmission_time = temp_transmission_time;
+
+						temp_priority = current->priority;
+						current->priority = next->priority;
+						next->priority = temp_priority;
+
+						temp_position = current->position;
+						current->position = next->position;
+						next->position = temp_position;
+
+						temp_scheduled = current->scheduled;
+						current->scheduled = next->scheduled;
+						next->scheduled = temp_scheduled;
+         }
+			
+         current = current->next;
+         next = next->next;
+      }
+   }   
 }
 
 
