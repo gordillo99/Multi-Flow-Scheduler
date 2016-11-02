@@ -41,7 +41,7 @@ int main (int argc, char **argv) {
 	pthread_t id_array[no_thds];
 	thread_ids = id_array;
 	clock_gettime(CLOCK_MONOTONIC, &initial); //sets the starting point for relative machine time
-	//start_time = round(initial.tv_nsec / 1.0e6);
+	
 	for (i = 0; i < no_thds; i++) {
 		if(pthread_create(&id_array[i], NULL, thread_start, (void *) &read_thds[i]) != 0) printf("Can't create thread %d\n", i); //start each thread (in order of input file)
 	}
@@ -62,14 +62,13 @@ int main (int argc, char **argv) {
 }
 
 double get_current_machine_time() {
-	long current_ms; // Milliseconds
 	struct timespec finish;
 	double elapsed;
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
 	//printf("start time %ld current time %ld \n", initial.tv_nsec, finish.tv_nsec);
 	elapsed = (finish.tv_sec - initial.tv_sec);
-	elapsed += (finish.tv_nsec - initial.tv_nsec) / 100000000.0;
+	elapsed += (finish.tv_nsec - initial.tv_nsec) / 1000000000.0;
 	return elapsed;
 }
 
@@ -85,7 +84,7 @@ void *thread_start(void *thread_ptr) {
   usleep(100000 * arrival_time);
   //TODO: use relative machine time
   // clock_gettime(CLOCK_REALTIME, &tm); investigate this 
-  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
+  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.2f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
   
   thread_transmission(id, arrival_time, transmission_time, priority, position);
 }
@@ -219,7 +218,6 @@ void read_input_file() {
 		read_thds[counter - 1].transmission_time = atoi(transmission_time);
 		read_thds[counter - 1].priority = atoi(priority);
 		read_thds[counter - 1].position = counter;
-		//insertFirst(atoi(id),  atoi(arrival_time),  atoi(transmission_time), atoi(priority), counter, 0);
 		counter++; // keeps track of position of thread in file
 	}
 
