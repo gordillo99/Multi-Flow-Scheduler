@@ -92,6 +92,65 @@ void *thread_start(void *thread_ptr) {
   thread_transmission(id, arrival_time, transmission_time, priority, position);
 }
 
+// entry point for each thread created
+void *thrFunction(void *flowItem) {
+
+    thd *thread_obj = (thd*)thread_ptr;
+
+		int id = thread_obj->id;
+		int arrival_time = thread_obj->arrival_time;
+		int transmission_time = thread_obj->transmission_time;
+		int priority = thread_obj->priority;
+		int position = thread_obj->position;
+
+		usleep(100000 * arrival_time);
+		
+		printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
+		
+		//thread_transmission(id, arrival_time, transmission_time, priority, position);
+		requestPipe(thread_obj);
+		
+    printf(Start...)
+
+    sleep for transmission time
+    usleep(...)
+
+    releasePipe(item) ;
+    printf(Finish..);
+}
+
+void requestPipe(flow *item) {
+    // lock trans mutex
+		pthread_mutex_lock(&trans_mutex);
+
+    if (transmission pipe available && length() == 0){
+        ...do some stuff..
+        pthread_mutex_unlock(&trans_mutex);
+        return;
+    }
+
+		// add item in queue, sort the queue according rules
+		insertLast(id, arrival_time, transmission_time, priority, position);
+		sort();
+    
+
+    printf("Flow %2d waits for the finish of flow %2d \n", id, getFirstId());
+    // wait for cond var and for having the first spot
+		while (getFirstId() != id){
+			pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
+		}
+
+    // update queue
+		
+
+    pthread_mutex_unlock(&trans_mutex);
+}
+
+void releasePipe() {
+    // I believe you genuis will figure this out!
+}
+
+
 void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position) {
 
 	// mutex
