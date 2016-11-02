@@ -28,8 +28,8 @@ int main (int argc, char **argv) {
 	int i;
 
 	if(argc == 1) {
-  	printf("Expected at least one argument\n");
-  	return(1);
+  	printf("Expected one argument (filename)\n");
+  	exit(EXIT_FAILURE);
  	}
 	
 	if (pthread_mutex_init(&ll_mutex, NULL) != 0){ //mutex initialization
@@ -161,6 +161,10 @@ void read_input_file(char * filename) {
   	if (counter == 0) {
   		no_thds = atoi(line);
   		read_thds = malloc(no_thds * sizeof(thd));
+  		if (read_thds == NULL) { // error handling
+			 	perror("command malloc failed");
+				exit(EXIT_FAILURE);
+		 	}
   		counter++;
   		continue;
   	}
@@ -213,6 +217,7 @@ void read_input_file(char * filename) {
 			}
 		}
 		
+		// populate array gathering thread's info
 		read_thds[counter - 1].id = atoi(id);
 		read_thds[counter - 1].arrival_time = atoi(arrival_time);
 		read_thds[counter - 1].transmission_time = atoi(transmission_time);
