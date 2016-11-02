@@ -11,7 +11,6 @@ typedef struct thread
 	 int transmission_time;
 	 int priority;
    int position;
-   int scheduled;
    struct thread *next;
 } thd;
 
@@ -33,8 +32,8 @@ void printList() {
    struct thread *ptr = head;
    //start from the beginning
    while(ptr != NULL) {
-      printf("(id: %d, arrival_time: %d, transmission_time: %d, priority: %d, original position: %d, scheduled: %d)\n",
-      	ptr->id, ptr->arrival_time, ptr->transmission_time, ptr->priority, ptr->position, ptr->scheduled);
+      printf("(id: %d, arrival_time: %d, transmission_time: %d, priority: %d, original position: %d)\n",
+      	ptr->id, ptr->arrival_time, ptr->transmission_time, ptr->priority, ptr->position);
       ptr = ptr->next;
    }
    printf("\n");
@@ -46,7 +45,7 @@ int getFirstId() {
 }
 
 //insert link at the first location
-void insertFirst(int id, int arrival_time, int transmission_time, int priority, int position, int scheduled)
+void insertFirst(int id, int arrival_time, int transmission_time, int priority, int position)
 {
    //create a link
    struct thread *link = (struct thread*) emalloc(sizeof(struct thread));
@@ -203,35 +202,9 @@ struct thread* deletePosition(int position){
    return current;
 }
 
-void updateScheduled(int id, int scheduled){
-
-   //start from the first link
-   struct thread* current = head;
-
-   //if list is empty
-   if(head == NULL)
-	 {
-      return;
-   }
-
-   //navigate through list
-   while(current->id != id){
-	
-      //if it is last thread
-      if(current->next == NULL){
-         return;
-      }else {
-         //go to next link
-         current = current->next;
-      }
-   }      
-	
-   current->scheduled = scheduled;
-}
-
 void sort() {
 
-   int i, j, k, temp_id, temp_arrival_time, temp_transmission_time, temp_priority, temp_position, temp_scheduled;
+   int i, j, k, temp_id, temp_arrival_time, temp_transmission_time, temp_priority, temp_position;
    struct thread *current;
    struct thread *next;
 	
@@ -245,20 +218,20 @@ void sort() {
       for ( j = 1 ; j < k ; j++ ) {   
 				 int switch_flag = 0;
 				 
-         if (current->scheduled < next->scheduled) {
-            switch_flag = 1;
-         } else if (current->scheduled == next->scheduled) {
-           if (current->priority > next->priority) {
-             switch_flag = 1;
-           } else if (current->priority == next->priority) {
-             if (current->transmission_time > next->transmission_time) {
-               switch_flag = 1;
-             } else if (current->transmission_time == next->transmission_time) {
-               if (current->position > next->position) {
-                 switch_flag = 1;
-               }
-             }
-           }
+         if (current->priority > next->priority) {
+           switch_flag = 1;
+         } else if (current->priority == next->priority) {
+         	 if (current->arrival_time > next->arrival_time) {
+         	   switch_flag = 1;
+         	 } else if (current->arrival_time == next->arrival_time) {
+         	   if (current->transmission_time > next->transmission_time) {
+		           switch_flag = 1;
+		         } else if (current->transmission_time == next->transmission_time) {
+		           if (current->position > next->position) {
+		             switch_flag = 1;
+		           }
+		         }
+         	 }
          }
          
          if (switch_flag) {
@@ -281,10 +254,6 @@ void sort() {
 						temp_position = current->position;
 						current->position = next->position;
 						next->position = temp_position;
-
-						temp_scheduled = current->scheduled;
-						current->scheduled = next->scheduled;
-						next->scheduled = temp_scheduled;
          }
 			
          current = current->next;

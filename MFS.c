@@ -4,6 +4,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
+#include <math.h>
 #include "linked_list.h"
 
 #define MAX_LINE_LEN 256
@@ -11,15 +13,18 @@
 
 void read_input_file();
 void *thread_start(void *thread_ptr);
-void thread_transmission(int id, int transmission_time);
+void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position);
 
 pthread_t * thread_ids;
 pthread_mutex_t ll_mutex; // read-write linked list mutex declaration
 pthread_mutex_t trans_mutex; // transmission mutex declaration
 pthread_cond_t turn_cond = PTHREAD_COND_INITIALIZER; //convar initialization
+struct thread *read_thds;
+int no_thds = 0;
+long start_time;
+struct timespec initial;
 
 int main (int argc, char **argv) {
-	int number_of_threads;
 	int i;
 	
 	if (pthread_mutex_init(&ll_mutex, NULL) != 0){ //mutex initialization
@@ -33,26 +38,39 @@ int main (int argc, char **argv) {
   }
 	
 	read_input_file();
-	number_of_threads = length();
-	pthread_t id_array[number_of_threads];
+	pthread_t id_array[no_thds];
 	thread_ids = id_array;
-	for (i = 0; i < number_of_threads; i++) {
-		if(pthread_create(&id_array[i], NULL, thread_start, (void *) find(i+1)) != 0) printf("Can't create thread %d\n", i); //start each thread (in order of input file)
+	clock_gettime(CLOCK_MONOTONIC, &initial); //sets the starting point for relative machine time
+	//start_time = round(initial.tv_nsec / 1.0e6);
+	for (i = 0; i < no_thds; i++) {
+		if(pthread_create(&id_array[i], NULL, thread_start, (void *) &read_thds[i]) != 0) printf("Can't create thread %d\n", i); //start each thread (in order of input file)
 	}
 	
-	
-	for (i = 0; i < number_of_threads; i++) {
+	for (i = 0; i < no_thds; i++) {
     pthread_join(id_array[i], NULL);
   }
 
   for (i = 0; i < length(); i++) free(deleteFirst()); // delete any remaining nodes before exiting
-
-
+  
+	if (read_thds != NULL) free(read_thds);
+	
 	pthread_mutex_destroy(&ll_mutex);
 	pthread_mutex_destroy(&trans_mutex);
 	pthread_cond_destroy(&turn_cond);
 	
 	return (0);
+}
+
+double get_current_machine_time() {
+	long current_ms; // Milliseconds
+	struct timespec finish;
+	double elapsed;
+	clock_gettime(CLOCK_MONOTONIC, &finish);
+
+	//printf("start time %ld current time %ld \n", initial.tv_nsec, finish.tv_nsec);
+	elapsed = (finish.tv_sec - initial.tv_sec);
+	elapsed += (finish.tv_nsec - initial.tv_nsec) / 100000000.0;
+	return elapsed;
 }
 
 void *thread_start(void *thread_ptr) {
@@ -67,12 +85,12 @@ void *thread_start(void *thread_ptr) {
   usleep(100000 * arrival_time);
   //TODO: use relative machine time
   // clock_gettime(CLOCK_REALTIME, &tm); investigate this 
-  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%2d)\n", id, (double)arrival_time, (double)transmission_time, priority);
+  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
   
-  thread_transmission(id, transmission_time);
+  thread_transmission(id, arrival_time, transmission_time, priority, position);
 }
 
-void thread_transmission(int id, int transmission_time) {
+void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position) {
 
 	// mutex
 	// indicate node is scheduled
@@ -80,7 +98,8 @@ void thread_transmission(int id, int transmission_time) {
 	// mutex
 	pthread_mutex_lock(&ll_mutex);
 	
-	updateScheduled(id, 1);
+	//updateScheduled(id, 1);
+	insertFirst(id, arrival_time, transmission_time, priority, position);
 	sort();
 	
 	pthread_mutex_unlock(&ll_mutex);
@@ -96,25 +115,23 @@ void thread_transmission(int id, int transmission_time) {
 	
 	pthread_mutex_lock(&ll_mutex);
 	
-	updateScheduled(id, 2);
+	//updateScheduled(id, 2);
 	
 	pthread_mutex_unlock(&ll_mutex);
 	
 	//TODO: use relative time
-	printf("Flow %2d starts its transmission at time %.2f. \n", id, (double) 0);
+	printf("Flow %2d starts its transmission at time %.2f. \n", id, (double) get_current_machine_time());
 	// perform transmission (sleep)
 	usleep(100000 * transmission_time);
 	//TODO: use relative time
-	printf("Flow %2d finishes its transmission at time %d\n", id, 0);
+	printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
 	
 	// mutex 
 	// remove node from linked list
 	// mutex
 	
 	pthread_mutex_lock(&ll_mutex);
-	
-	deleteFirst();
-	
+	free(delete(id));
 	pthread_mutex_unlock(&ll_mutex);
 	pthread_cond_signal(&turn_cond); // signal convar
 	pthread_mutex_unlock(&trans_mutex);
@@ -125,7 +142,6 @@ void read_input_file() {
 		arrival_time[MAX_LINE_LEN], transmission_time[MAX_LINE_LEN], priority[MAX_LINE_LEN];
   FILE* input_file;
   int counter = 0;
-  int no_threads = 0;
 
 	// TODO: use actual argument
   snprintf(path, MAX_PATH_LEN, "%s", "flow.txt");
@@ -144,7 +160,8 @@ void read_input_file() {
   	int status = 0;
   	
   	if (counter == 0) {
-  		no_threads = atoi(line);
+  		no_thds = atoi(line);
+  		read_thds = malloc(no_thds * sizeof(thd));
   		counter++;
   		continue;
   	}
@@ -196,8 +213,13 @@ void read_input_file() {
 				}
 			}
 		}
-
-		insertFirst(atoi(id),  atoi(arrival_time),  atoi(transmission_time), atoi(priority), counter, 0);
+		
+		read_thds[counter - 1].id = atoi(id);
+		read_thds[counter - 1].arrival_time = atoi(arrival_time);
+		read_thds[counter - 1].transmission_time = atoi(transmission_time);
+		read_thds[counter - 1].priority = atoi(priority);
+		read_thds[counter - 1].position = counter;
+		//insertFirst(atoi(id),  atoi(arrival_time),  atoi(transmission_time), atoi(priority), counter, 0);
 		counter++; // keeps track of position of thread in file
 	}
 
