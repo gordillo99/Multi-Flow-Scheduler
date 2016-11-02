@@ -11,7 +11,7 @@
 #define MAX_LINE_LEN 256
 #define MAX_PATH_LEN 40
 
-void read_input_file();
+void read_input_file(char * filename);
 void *thread_start(void *thread_ptr);
 void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position);
 
@@ -26,6 +26,11 @@ struct timespec initial;
 
 int main (int argc, char **argv) {
 	int i;
+
+	if(argc == 1) {
+  	printf("Expected at least one argument\n");
+  	return(1);
+ 	}
 	
 	if (pthread_mutex_init(&ll_mutex, NULL) != 0){ //mutex initialization
         printf("Mutex init failed\n");
@@ -37,7 +42,7 @@ int main (int argc, char **argv) {
         return 1;
   }
 	
-	read_input_file();
+	read_input_file(argv[1]);
 	pthread_t id_array[no_thds];
 	thread_ids = id_array;
 	clock_gettime(CLOCK_MONOTONIC, &initial); //sets the starting point for relative machine time
@@ -66,7 +71,6 @@ double get_current_machine_time() {
 	double elapsed;
 	clock_gettime(CLOCK_MONOTONIC, &finish);
 
-	//printf("start time %ld current time %ld \n", initial.tv_nsec, finish.tv_nsec);
 	elapsed = (finish.tv_sec - initial.tv_sec);
 	elapsed += (finish.tv_nsec - initial.tv_nsec) / 1000000000.0;
 	return elapsed;
@@ -82,8 +86,7 @@ void *thread_start(void *thread_ptr) {
   int position = thread_obj->position;
 
   usleep(100000 * arrival_time);
-  //TODO: use relative machine time
-  // clock_gettime(CLOCK_REALTIME, &tm); investigate this 
+  
   printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.2f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
   
   thread_transmission(id, arrival_time, transmission_time, priority, position);
@@ -118,11 +121,9 @@ void thread_transmission(int id, int arrival_time, int transmission_time, int pr
 	
 	pthread_mutex_unlock(&ll_mutex);
 	
-	//TODO: use relative time
-	printf("Flow %2d starts its transmission at time %.2f. \n", id, (double) get_current_machine_time());
+	printf("Flow %2d starts its transmission at time %.2f \n", id, (double) get_current_machine_time());
 	// perform transmission (sleep)
 	usleep(100000 * transmission_time);
-	//TODO: use relative time
 	printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
 	
 	// mutex 
@@ -136,19 +137,18 @@ void thread_transmission(int id, int arrival_time, int transmission_time, int pr
 	pthread_mutex_unlock(&trans_mutex);
 }
 
-void read_input_file() {
+void read_input_file(char * filename) {
 	char path[MAX_PATH_LEN], line[MAX_LINE_LEN], id[MAX_LINE_LEN], 
 		arrival_time[MAX_LINE_LEN], transmission_time[MAX_LINE_LEN], priority[MAX_LINE_LEN];
   FILE* input_file;
   int counter = 0;
 
-	// TODO: use actual argument
-  snprintf(path, MAX_PATH_LEN, "%s", "flow.txt");
+  snprintf(path, MAX_PATH_LEN, "%s", filename);
 
   input_file = fopen(path, "r");
 
   if(!input_file) { 
-		perror("Could not open input file\n");
+		perror("Could not open input file");
 		return;
 	}
 
