@@ -103,27 +103,30 @@ void thread_transmission(int id, int arrival_time, int transmission_time, int pr
 	//updateScheduled(id, 1);
 	insertFirst(id, arrival_time, transmission_time, priority, position);
 	sort();
-	
+	if (getFirstId() != id) printf("Flow %2d waits for the finish of flow %2d \n", id, getFirstId());
 	pthread_mutex_unlock(&ll_mutex);
 	
 	// lock trans mutex
 	pthread_mutex_lock(&trans_mutex);
+
+	int first_in_line = getFirstId();
+  printf("Flow %2d waits for the finish of flow %2d \n", id, first_in_line);
 	
 	// wait for cond var and for having the first spot
-	while (getFirstId() != id){
-		printf("Flow %2d waits for the finish of flow %2d \n", id, getFirstId());
-		pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
+	while (first_in_line != id){
+		//printf("Flow %2d waits for the finish of flow %2d \n", id, first_in_line);
+		pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled
 	}
 	
 	pthread_mutex_lock(&ll_mutex);
 	
-	//updateScheduled(id, 2);
+	updateExecuting(id, 1);
+	sort();
 	
 	pthread_mutex_unlock(&ll_mutex);
 	
 	printf("Flow %2d starts its transmission at time %.2f \n", id, (double) get_current_machine_time());
-	// perform transmission (sleep)
-	usleep(100000 * transmission_time);
+	usleep(100000 * transmission_time); // perform transmission (sleep)
 	printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
 	
 	// mutex 
@@ -131,9 +134,13 @@ void thread_transmission(int id, int arrival_time, int transmission_time, int pr
 	// mutex
 	
 	pthread_mutex_lock(&ll_mutex);
-	free(delete(id));
+	printList();
+	free(deleteFirst());
+	printList();
 	pthread_mutex_unlock(&ll_mutex);
+
 	pthread_cond_signal(&turn_cond); // signal convar
+
 	pthread_mutex_unlock(&trans_mutex);
 }
 

@@ -1,0 +1,48 @@
+Flow  5 arrives: arrival time (0.20), transmission time (50.0), priority (5)
+Flow  5 starts its transmission at time 0.20 
+Flow  3 arrives: arrival time (0.30), transmission time (50.0), priority (3)
+Flow  1 arrives: arrival time (0.30), transmission time (60.0), priority (3)
+Flow  3 waits for the finish of flow  5 
+Flow  1 waits for the finish of flow  5 
+Flow  2 arrives: arrival time (0.60), transmission time (70.0), priority (1)
+Flow  2 waits for the finish of flow  5 
+Flow  4 arrives: arrival time (0.70), transmission time (50.0), priority (2)
+Flow  4 waits for the finish of flow  5 
+Flow  5 finishes its transmission at time 5.20
+(id: 5, arrival_time: 2, transmission_time: 50, priority: 5, original position: 5, executing: 1)
+(id: 2, arrival_time: 6, transmission_time: 70, priority: 1, original position: 2, executing: 0)
+(id: 4, arrival_time: 7, transmission_time: 50, priority: 2, original position: 4, executing: 0)
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+(id: 2, arrival_time: 6, transmission_time: 70, priority: 1, original position: 2, executing: 0)
+(id: 4, arrival_time: 7, transmission_time: 50, priority: 2, original position: 4, executing: 0)
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+Flow  3 waits for the finish of flow  2 
+Flow  1 waits for the finish of flow  2 
+Flow  2 starts its transmission at time 5.20 
+Flow  2 finishes its transmission at time 12.20
+(id: 2, arrival_time: 6, transmission_time: 70, priority: 1, original position: 2, executing: 1)
+(id: 4, arrival_time: 7, transmission_time: 50, priority: 2, original position: 4, executing: 0)
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+(id: 4, arrival_time: 7, transmission_time: 50, priority: 2, original position: 4, executing: 0)
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+Flow  3 waits for the finish of flow  4 
+Flow  3 waits for the finish of flow  4 
+Flow  4 starts its transmission at time 12.20 
+Flow  4 finishes its transmission at time 17.20
+(id: 4, arrival_time: 7, transmission_time: 50, priority: 2, original position: 4, executing: 1)
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+(id: 3, arrival_time: 3, transmission_time: 50, priority: 3, original position: 3, executing: 0)
+(id: 1, arrival_time: 3, transmission_time: 60, priority: 3, original position: 1, executing: 0)
+
+Flow  1 waits for the finish of flow  3 
+Flow  1 waits for the finish of flow  3 

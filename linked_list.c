@@ -11,6 +11,7 @@ typedef struct thread
 	 int transmission_time;
 	 int priority;
    int position;
+	 int executing;
    struct thread *next;
 } thd;
 
@@ -32,8 +33,8 @@ void printList() {
    struct thread *ptr = head;
    //start from the beginning
    while(ptr != NULL) {
-      printf("(id: %d, arrival_time: %d, transmission_time: %d, priority: %d, original position: %d)\n",
-      	ptr->id, ptr->arrival_time, ptr->transmission_time, ptr->priority, ptr->position);
+      printf("(id: %d, arrival_time: %d, transmission_time: %d, priority: %d, original position: %d, executing: %d)\n",
+      	ptr->id, ptr->arrival_time, ptr->transmission_time, ptr->priority, ptr->position, ptr->executing);
       ptr = ptr->next;
    }
    printf("\n");
@@ -55,6 +56,7 @@ void insertFirst(int id, int arrival_time, int transmission_time, int priority, 
    link->transmission_time = transmission_time;
    link->priority = priority;
    link->position = position;
+	 link->executing = 0;
 	
    //point it to old first thread
    link->next = head;
@@ -202,9 +204,35 @@ struct thread* deletePosition(int position){
    return current;
 }
 
+void updateExecuting(int id, int executing){
+
+   //start from the first link
+   struct thread* current = head;
+
+   //if list is empty
+   if(head == NULL)
+	 {
+      return;
+   }
+
+   //navigate through list
+   while(current->id != id){
+	
+      //if it is last thread
+      if(current->next == NULL){
+         return;
+      }else {
+         //go to next link
+         current = current->next;
+      }
+   }      
+	
+   current->executing = executing;
+}
+
 void sort() {
 
-   int i, j, k, temp_id, temp_arrival_time, temp_transmission_time, temp_priority, temp_position;
+   int i, j, k, temp_id, temp_arrival_time, temp_transmission_time, temp_priority, temp_position, temp_executing;
    struct thread *current;
    struct thread *next;
 	
@@ -218,21 +246,25 @@ void sort() {
       for ( j = 1 ; j < k ; j++ ) {   
 				 int switch_flag = 0;
 				 
-         if (current->priority > next->priority) {
-           switch_flag = 1;
-         } else if (current->priority == next->priority) {
-         	 if (current->arrival_time > next->arrival_time) {
-         	   switch_flag = 1;
-         	 } else if (current->arrival_time == next->arrival_time) {
-         	   if (current->transmission_time > next->transmission_time) {
-		           switch_flag = 1;
-		         } else if (current->transmission_time == next->transmission_time) {
-		           if (current->position > next->position) {
-		             switch_flag = 1;
-		           }
-		         }
-         	 }
-         }
+         if (current->executing < next->executing) {
+				   switch_flag = 1;
+				 } else if (current-> executing == next->executing) {
+				   if (current->priority > next->priority) {
+		         switch_flag = 1;
+		       } else if (current->priority == next->priority) {
+		       	 if (current->arrival_time > next->arrival_time) {
+		       	   switch_flag = 1;
+		       	 } else if (current->arrival_time == next->arrival_time) {
+		       	   if (current->transmission_time > next->transmission_time) {
+				         switch_flag = 1;
+				       } else if (current->transmission_time == next->transmission_time) {
+				         if (current->position > next->position) {
+				           switch_flag = 1;
+				         }
+				       }
+		       	 }
+		       }
+				 }	 
          
          if (switch_flag) {
             temp_id = current->id;
@@ -254,6 +286,10 @@ void sort() {
 						temp_position = current->position;
 						current->position = next->position;
 						next->position = temp_position;
+
+						temp_executing = current->executing;
+						current->executing = next->executing;
+						next->executing = temp_executing;
          }
 			
          current = current->next;
