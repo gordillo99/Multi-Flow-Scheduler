@@ -87,7 +87,7 @@ void *thread_start(void *thread_ptr) {
 
   usleep(100000 * arrival_time);
   
-  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.2f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
+  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
   
   thread_transmission(id, arrival_time, transmission_time, priority, position);
 }
