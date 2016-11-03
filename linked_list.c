@@ -4,6 +4,7 @@
 
 // in order to reduce the amount of potential bugs, linked list code based from https://www.tutorialspoint.com/data_structures_algorithms/linked_list_program_in_c.htm
 
+// struct for holding thread info
 typedef struct thread  
 {
 	 int id;
@@ -14,6 +15,7 @@ typedef struct thread
    struct thread *next;
 } thd;
 
+// head and current thread vars
 struct thread *head = NULL;
 struct thread *current = NULL;
 
@@ -39,6 +41,7 @@ void printList() {
    printf("\n");
 }
 
+// gets the id of the first node
 int getFirstId() {
 	if (head == NULL) return -1;
 	else return head->id;
@@ -89,56 +92,9 @@ int length()
    int length = 0;
    struct thread *current;
 	
-   for(current = head; current != NULL; current = current->next)
-	 {
-      length++;
-   }
+   for(current = head; current != NULL; current = current->next) length++;
 	
    return length;
-}
-
-// inserts new node at the end of linked list
-void insertLast(int id, int arrival_time, int transmission_time, int priority, int position)
-{
-   struct thread *current;
-	 struct thread *link = (struct thread*) emalloc(sizeof(struct thread));
-   for(current = head; current->next != NULL; current = current->next);
-
-	 link->id = id;
-   link->arrival_time = arrival_time;
-   link->transmission_time = transmission_time;
-   link->priority = priority;
-   link->position = position;   
-
-	 current->next = link;
-}
-
-//find a link with given key
-struct thread* find(int position){
-
-   //start from the first link
-   struct thread* current = head;
-
-   //if list is empty
-   if(head == NULL)
-	{
-      return NULL;
-   }
-
-   //navigate through list
-   while(current->position != position){
-	
-      //if it is last thread
-      if(current->next == NULL){
-         return NULL;
-      }else {
-         //go to next link
-         current = current->next;
-      }
-   }      
-	
-   //if data found, return the current Link
-   return current;
 }
 
 //delete a link with given id
@@ -155,45 +111,6 @@ struct thread* delete(int id){
 
    //navigate through list
    while(current->id != id){
-	
-      //if it is last thread
-      if(current->next == NULL){
-         return NULL;
-      }else {
-         //store reference to current link
-         previous = current;
-         //move to next link
-         current = current->next;             
-      }
-		
-   }
-
-   //found a match, update the link
-   if(current == head) {
-      //change first to point to next link
-      head = head->next;
-   }else {
-      //bypass the current link
-      previous->next = current->next;
-   }    
-	
-   return current;
-}
-
-//delete a link with given id
-struct thread* deletePosition(int position){
-
-   //start from the first link
-   struct thread* current = head;
-   struct thread* previous = NULL;
-	
-   //if list is empty
-   if(head == NULL){
-      return NULL;
-   }
-
-   //navigate through list
-   while(current->position != position){
 	
       //if it is last thread
       if(current->next == NULL){
