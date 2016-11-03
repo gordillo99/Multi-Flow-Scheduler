@@ -35,28 +35,28 @@ int main (int argc, char **argv) {
   
   // initialize mutex and do error checking
   if (pthread_mutex_init(&trans_mutex, NULL) != 0){
-        printf("Mutex init failed\n");
-        return 1;
+		printf("Mutex init failed\n");
+		return 1;
   }
 	
 	read_input_file(argv[1]); // reading given file
 	pthread_t id_array[no_thds]; // array to hold ids of threads
-	clock_gettime(CLOCK_MONOTONIC, &initial); //sets the starting point for relative machine time
+	if (clock_gettime(CLOCK_MONOTONIC, &initial) == -1) perror("Error while getting machine time"); //sets the starting point for relative machine time
 	
 	for (i = 0; i < no_thds; i++) { //start each thread (in order of input file)
 		if(pthread_create(&id_array[i], NULL, thrFunction, (void *) &read_thds[i]) != 0) printf("Can't create thread %d\n", i); 
 	}
 	
 	for (i = 0; i < no_thds; i++) { // wait for all threads to finish executing
-    pthread_join(id_array[i], NULL);
+    if (pthread_join(id_array[i], NULL) != 0) perror("Error while waiting for threads");
   }
 
   for (i = 0; i < length(); i++) free(deleteFirst()); // delete any remaining nodes before exiting
   
 	if (read_thds != NULL) free(read_thds); // deallocate dynamic memory used
 	
-	pthread_mutex_destroy(&trans_mutex); // destroy mutex
-	pthread_cond_destroy(&turn_cond); // destroy cond var
+	if (pthread_mutex_destroy(&trans_mutex) != 0) perror("Error while destroying mutex"); // destroy mutex
+	if (pthread_cond_destroy(&turn_cond) != 0) perror("Error while destroying cond var"); // destroy cond var
 	
 	return (0);
 }
@@ -65,7 +65,7 @@ int main (int argc, char **argv) {
 double get_current_machine_time() {
 	struct timespec finish;
 	double elapsed;
-	clock_gettime(CLOCK_MONOTONIC, &finish); // get current clock time
+	if (clock_gettime(CLOCK_MONOTONIC, &finish) == -1) perror("Error while getting machine time"); // get current clock time
 
 	// calculate relative time
 	elapsed = (finish.tv_sec - initial.tv_sec);
@@ -84,7 +84,7 @@ void *thrFunction(void *thread_ptr) {
 		int priority = thread_obj->priority;
 		int position = thread_obj->position;
 
-		usleep(100000 * arrival_time); // sleep the arrival time
+		if (usleep(100000 * arrival_time) == -1) perror("Error while sleeping"); // sleep the arrival time
 		
 		printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
 		
@@ -94,7 +94,7 @@ void *thrFunction(void *thread_ptr) {
     printf("Flow %2d starts its transmission at time %.2f \n", id, (double) get_current_machine_time());
 
     // perform transmission (sleep)
-		usleep(100000 * transmission_time);
+    if (usleep(100000 * transmission_time) == -1) perror("Error while sleeping");
 
     printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
     
@@ -104,12 +104,12 @@ void *thrFunction(void *thread_ptr) {
 
 void requestPipe(thd *item) {
     // lock trans mutex
-		pthread_mutex_lock(&trans_mutex);
+		if (pthread_mutex_lock(&trans_mutex) != 0) perror("Error while locking mutex");
 
 		// if the pipe is available and there's no one in the queue, return to transmit
     if (trans_pipe_available && length() == 0){
       trans_pipe_available = 0;
-      pthread_mutex_unlock(&trans_mutex);
+      if (pthread_mutex_unlock(&trans_mutex) != 0) perror("Error while unlocking mutex");
       return;
     }
 
@@ -129,20 +129,20 @@ void requestPipe(thd *item) {
 		// indicate the transmission pipe is being used
 		trans_pipe_available = 0;
 
-    pthread_mutex_unlock(&trans_mutex);
+    if (pthread_mutex_unlock(&trans_mutex) != 0) perror("Error while unlocking mutex");
 }
 
 // indicates the transmission pipe is available
 void releasePipe() {
-    pthread_mutex_lock(&trans_mutex);
+    if (pthread_mutex_lock(&trans_mutex) != 0) perror("Error while locking mutex");
     
     // set flag to available
     trans_pipe_available = 1;
     
     // broadcast to all waiting threads that pipe is available
-    pthread_cond_broadcast(&turn_cond);
+    if (pthread_cond_broadcast(&turn_cond) != 0) perror("Error while broadcasting to threads");
     
-    pthread_mutex_unlock(&trans_mutex);
+    if (pthread_mutex_unlock(&trans_mutex) != 0) perror("Error while unlocking mutex");
 }
 
 // reads the file indicated by the user
@@ -161,7 +161,7 @@ void read_input_file(char * filename) {
 	// error checking
   if(!input_file) { 
 		perror("Could not open input file");
-		return;
+		exit(EXIT_FAILURE);
 	}
 
 	// read until finding EOF
