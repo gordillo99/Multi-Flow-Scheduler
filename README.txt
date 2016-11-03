@@ -1,7 +1,7 @@
 To compile code, have the following files in the same directory:
 
-flow.txt
-flow.txt.2
+flow.txt (test tile)
+flow.txt.2 (another test file)
 linked_list.c
 linked_list.h
 MFS.c
