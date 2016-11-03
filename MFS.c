@@ -193,12 +193,12 @@ void requestPipe(thd *item) {
 
     // update queue
 		delete(item->id);
+		trans_pipe_available = 0;
 
     pthread_mutex_unlock(&trans_mutex);
 }
 
 void releasePipe() {
-    // I believe you genuis will figure this out!
     pthread_mutex_lock(&trans_mutex);
     
     trans_pipe_available = 1;
