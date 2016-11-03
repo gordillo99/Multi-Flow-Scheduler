@@ -83,17 +83,34 @@ int isEmpty()
    return head == NULL;
 }
 
+// returns length of linked list
 int length()
 {
    int length = 0;
    struct thread *current;
 	
    for(current = head; current != NULL; current = current->next)
-	{
+	 {
       length++;
    }
 	
    return length;
+}
+
+// inserts new node at the end of linked list
+void insertLast(int id, int arrival_time, int transmission_time, int priority, int position)
+{
+   struct thread *current;
+	 struct thread *link = (struct thread*) emalloc(sizeof(struct thread));
+   for(current = head; current->next != NULL; current = current->next);
+
+	 link->id = id;
+   link->arrival_time = arrival_time;
+   link->transmission_time = transmission_time;
+   link->priority = priority;
+   link->position = position;   
+
+	 current->next = link;
 }
 
 //find a link with given key

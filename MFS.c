@@ -12,8 +12,9 @@
 #define MAX_PATH_LEN 40
 
 void read_input_file(char * filename);
-void *thread_start(void *thread_ptr);
-void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position);
+void releasePipe();
+void requestPipe(thd *item);
+void *thrFunction(void *thread_ptr);
 
 pthread_t * thread_ids;
 pthread_mutex_t ll_mutex; // read-write linked list mutex declaration
@@ -23,6 +24,7 @@ struct thread *read_thds;
 int no_thds = 0;
 long start_time;
 struct timespec initial;
+int trans_pipe_available = 1;
 
 int main (int argc, char **argv) {
 	int i;
@@ -48,7 +50,7 @@ int main (int argc, char **argv) {
 	clock_gettime(CLOCK_MONOTONIC, &initial); //sets the starting point for relative machine time
 	
 	for (i = 0; i < no_thds; i++) {
-		if(pthread_create(&id_array[i], NULL, thread_start, (void *) &read_thds[i]) != 0) printf("Can't create thread %d\n", i); //start each thread (in order of input file)
+		if(pthread_create(&id_array[i], NULL, thrFunction, (void *) &read_thds[i]) != 0) printf("Can't create thread %d\n", i); //start each thread (in order of input file)
 	}
 	
 	for (i = 0; i < no_thds; i++) {
@@ -76,65 +78,70 @@ double get_current_machine_time() {
 	return elapsed;
 }
 
-void *thread_start(void *thread_ptr) {
-	thd *thread_obj = (thd*)thread_ptr;
+// entry point for each thread created
+void *thrFunction(void *thread_ptr) {
 
-	int id = thread_obj->id;
-	int arrival_time = thread_obj->arrival_time;
-	int transmission_time = thread_obj->transmission_time;
-	int priority = thread_obj->priority;
-  int position = thread_obj->position;
+    thd *thread_obj = (thd*)thread_ptr;
 
-  usleep(100000 * arrival_time);
-  
-  printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
-  
-  thread_transmission(id, arrival_time, transmission_time, priority, position);
+		int id = thread_obj->id;
+		int arrival_time = thread_obj->arrival_time;
+		int transmission_time = thread_obj->transmission_time;
+		int priority = thread_obj->priority;
+		int position = thread_obj->position;
+
+		usleep(100000 * arrival_time);
+		
+		printf("Flow %2d arrives: arrival time (%.2f), transmission time (%.1f), priority (%d)\n", id, (double)get_current_machine_time(), (double)transmission_time, priority);
+		
+		//thread_transmission(id, arrival_time, transmission_time, priority, position);
+		requestPipe(thread_obj);
+		
+    printf("Flow %2d starts its transmission at time %.2f \n", id, (double) get_current_machine_time());
+
+    // perform transmission (sleep)
+		usleep(100000 * transmission_time);
+
+    //releasePipe(item);
+    printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
+    releasePipe();
 }
 
-void thread_transmission(int id, int arrival_time, int transmission_time, int priority, int position) {
+void requestPipe(thd *item) {
+    // lock trans mutex
+		pthread_mutex_lock(&trans_mutex);
 
-	// mutex
-	// indicate node is scheduled
-	// sort linked list
-	// mutex
-	pthread_mutex_lock(&ll_mutex);
-	
-	//updateScheduled(id, 1);
-	insertFirst(id, arrival_time, transmission_time, priority, position);
-	sort();
-	
-	pthread_mutex_unlock(&ll_mutex);
-	
-	// lock trans mutex
-	pthread_mutex_lock(&trans_mutex);
-	
-	// wait for cond var and for having the first spot
-	while (getFirstId() != id){
-		printf("Flow %2d waits for the finish of flow %2d \n", id, getFirstId());
-		pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
-	}
-	
-	pthread_mutex_lock(&ll_mutex);
-	
-	//updateScheduled(id, 2);
-	
-	pthread_mutex_unlock(&ll_mutex);
-	
-	printf("Flow %2d starts its transmission at time %.2f \n", id, (double) get_current_machine_time());
-	// perform transmission (sleep)
-	usleep(100000 * transmission_time);
-	printf("Flow %2d finishes its transmission at time %.2f\n", id, (double) get_current_machine_time());
-	
-	// mutex 
-	// remove node from linked list
-	// mutex
-	
-	pthread_mutex_lock(&ll_mutex);
-	free(delete(id));
-	pthread_mutex_unlock(&ll_mutex);
-	pthread_cond_signal(&turn_cond); // signal convar
-	pthread_mutex_unlock(&trans_mutex);
+    if (trans_pipe_available && length() == 0){
+        //...do some stuff..
+        //insertFirst(item->id, item->arrival_time, item->transmission_time, item->priority, item->position);
+        trans_pipe_available = 0;
+        pthread_mutex_unlock(&trans_mutex);
+        return;
+    }
+
+		// add item in queue, sort the queue according rules
+		insertFirst(item->id, item->arrival_time, item->transmission_time, item->priority, item->position);
+		sort();
+
+    // wait for cond var and for having the first spot
+		while (getFirstId() != item->id || !trans_pipe_available){
+			if (getFirstId() != item->id) printf("Flow %2d waits for the finish of flow %2d \n", item->id, getFirstId());
+			pthread_cond_wait(&turn_cond, &trans_mutex); // release mutex(trans_mutex), wait on turn_cond, until it is signaled	
+		}
+
+    // update queue
+		delete(item->id);
+		trans_pipe_available = 0;
+
+    pthread_mutex_unlock(&trans_mutex);
+}
+
+void releasePipe() {
+    pthread_mutex_lock(&trans_mutex);
+    
+    trans_pipe_available = 1;
+    pthread_cond_broadcast(&turn_cond);
+    
+    pthread_mutex_unlock(&trans_mutex);
 }
 
 void read_input_file(char * filename) {

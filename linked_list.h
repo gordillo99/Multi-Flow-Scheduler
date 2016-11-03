@@ -19,6 +19,7 @@ void updateScheduled(int position, int scheduled);
 void sort();
 int getFirstId();
 void printList();
+void insertLast(int id, int arrival_time, int transmission_time, int priority, int position);
 
 
 
